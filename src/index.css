@@ -22,8 +22,21 @@ body {
   height: 100dvh;
 }
 
+#root {
+  display: flex;
+  align-items: flex-start;
+}
+
 .nonogram {
   background-color: var(--color-background);
+}
+
+.composer-controls {
+  background-color: #5f5f5f;
+  padding: 0.5rem 1rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
 }
 
 .board-container {
@@ -82,11 +95,13 @@ body {
   border-right: var(--grid-border);
   border-bottom: var(--grid-border);
   border-width: 2px;
+  grid-template-columns: repeat(var(--repeat-cols), var(--grid-size));
+  grid-auto-rows: var(--grid-size);
 }
 
 .tile {
-  width: var(--grid-size);
-  height: var(--grid-size);
+  width: 100%;
+  height: 100%;
   background-color: #fff;
   border-top: var(--grid-border);
   border-left: var(--grid-border);
@@ -106,6 +121,17 @@ body {
 
     &.marked {
       background-color: #5f5f5f;
+    }
+
+    &.crossed {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    &.crossed::after {
+      content: "X";
+      color: rgb(155, 57, 57);
     }
   }
 }

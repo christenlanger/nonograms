@@ -1,58 +1,38 @@
-import { useState, useEffect } from "react";
+import { useRef } from "react";
 
-import type { BoardLayout } from "@/shared/types";
+import type { BoardLayout, Hints } from "@/shared/types";
 
 import Board from "@/features/core/components/Board";
 import HintsList from "@/features/core/components/Hints";
-import { calculateHints } from "../utils";
-import type { Hints } from "@/features/solver/types";
 
 type Props = {
   boardLayout: BoardLayout;
+  hints: Hints;
   onMark: (index: number) => void;
-  onUpdateHints: (hints: Hints) => void;
+  onUpdateHints: () => void;
 };
 
-export default function BoardComposer({ boardLayout, onMark, onUpdateHints }: Props) {
-  const { tiles, dimensions } = boardLayout;
-  const { rows, cols } = dimensions;
-
-  const [pointerDown, setPointerDown] = useState(false);
-  const [hints, setHints] = useState<Hints>(() => {
-    return {
-      rowHints: calculateHints(tiles, rows, cols, "rows"),
-      colHints: calculateHints(tiles, rows, cols, "cols"),
-    };
-  });
+export default function BoardComposer({ boardLayout, hints, onMark, onUpdateHints }: Props) {
+  const pointerDown = useRef(false);
 
   const handlePointerDown = (index: number) => {
-    setPointerDown(true);
+    pointerDown.current = true;
     onMark(index);
-  };
 
-  const handlePointerEnter = (index: number) => {
-    if (pointerDown) onMark(index);
-  };
-
-  useEffect(() => {
     const handlePointerUp = () => {
-      setPointerDown(false);
+      pointerDown.current = false;
 
-      const hints = {
-        rowHints: calculateHints(tiles, rows, cols, "rows"),
-        colHints: calculateHints(tiles, rows, cols, "cols"),
-      };
+      onUpdateHints();
 
-      setHints(hints);
-      onUpdateHints(hints);
+      window.removeEventListener("pointerup", handlePointerUp);
     };
 
     window.addEventListener("pointerup", handlePointerUp);
+  };
 
-    return () => {
-      window.removeEventListener("pointerup", handlePointerUp);
-    };
-  }, [onUpdateHints, pointerDown, cols, rows, tiles]);
+  const handlePointerEnter = (index: number) => {
+    if (pointerDown.current) onMark(index);
+  };
 
   const { colHints, rowHints } = hints;
 

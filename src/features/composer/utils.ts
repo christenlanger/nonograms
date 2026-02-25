@@ -1,5 +1,7 @@
+import type { Cell } from "@/shared/types";
+
 export function calculateHints(
-  tiles: Set<number>,
+  tiles: Map<number, Cell>,
   rows: number,
   cols: number,
   mode: "rows" | "cols",
@@ -16,7 +18,7 @@ export function calculateHints(
     for (let j = 0; j < axis2Length; j++) {
       const index = mode === "rows" ? i * cols + j : j * cols + i;
 
-      if (tiles.has(index)) {
+      if (tiles.get(index) === "O") {
         count++;
       } else if (count > 0) {
         hintRow.push(count);

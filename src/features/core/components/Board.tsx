@@ -13,13 +13,19 @@ type Props = {
 export default function Board({ boardLayout, onPointerDown, onPointerEnter }: Props) {
   const { dimensions, separators, tiles } = boardLayout;
 
+  const cssStyle = {
+    "--repeat-cols": dimensions.cols,
+    "--repeat-rows": dimensions.rows,
+  } as React.CSSProperties;
+
   return (
-    <div className="board" style={{ gridTemplateColumns: `repeat(${dimensions.cols}, auto)` }}>
+    <div className="board" style={cssStyle}>
       {Array.from({ length: dimensions.rows }, (_, row) => (
         <Fragment key={`row-${row}`}>
           {Array.from({ length: dimensions.cols }, (_, col) => {
             const index = row * dimensions.cols + col;
-            const cssClass = tiles.has(index) ? "marked" : "";
+            const value = tiles?.get(index);
+            const cssClass = value === "O" ? "marked" : value === "X" ? "crossed" : "";
 
             return (
               <Tile

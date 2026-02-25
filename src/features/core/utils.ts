@@ -1,4 +1,4 @@
-import type { Cell } from "../solver/types";
+import type { Cell } from "@/shared/types";
 
 export function generateCells(rows: number, cols: number, tiles: Set<number>): Cell[][] {
   const output: Cell[][] = [];

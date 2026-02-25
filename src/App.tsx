@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import type { SolverBoard } from "./features/solver/types";
+import type { SolverBoard } from "./shared/types";
 
 import Composer from "./features/composer/components/Composer";
 import Solver from "./features/solver/Solver";

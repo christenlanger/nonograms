@@ -1,17 +1,11 @@
-export type Cell = "O" | "X" | "?";
+import type { Cell } from "@/shared/types";
 
 export type LineConfig = {
   status: "valid" | "invalid";
   cells: Cell[];
 };
 
-export type Hints = {
-  rowHints: number[][];
-  colHints: number[][];
-};
-
-export type SolverBoard = {
-  rows: number;
-  cols: number;
+export type SolvedBoard = {
+  status: "valid" | "invalid";
   grid: Cell[][];
-} & Hints;
+};

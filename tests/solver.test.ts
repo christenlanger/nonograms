@@ -103,6 +103,11 @@ describe("getOverlaps", () => {
     expect(result.cells.join("")).toBe("OOXOO");
   });
 
+  it("fills entire row with X if there are 0 hints", () => {
+    const result = getOverlaps(Array(5).fill("?"), [0]);
+    expect(result.cells.join("")).toBe("XXXXX");
+  });
+
   // ─────────────────────────────
   // Full coverage cases
   // ─────────────────────────────
@@ -133,5 +138,19 @@ describe("getOverlaps", () => {
     const result = getOverlaps(["?", "O", "?", "?"], [1, 2]);
     // The O prevents the second hint to be placed.
     expect(result.status).toBe("invalid");
+  });
+
+  // ─────────────────────────────
+  // Stress tests
+  // ─────────────────────────────
+
+  it("case 1", () => {
+    const result = getOverlaps(["O", "?", "?", "O", "O", "?", "?", "O", "?", "?"], [1, 3, 1]);
+    expect(result.cells.join("")).toBe("OX?OO?XOXX");
+  });
+
+  it("case 1 mirror", () => {
+    const result = getOverlaps(["?", "?", "O", "?", "?", "O", "O", "?", "?", "O"], [1, 3, 1]);
+    expect(result.cells.join("")).toBe("XXOX?OO?XO");
   });
 });

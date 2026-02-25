@@ -1,4 +1,5 @@
-import type { Cell, LineConfig } from "./types";
+import type { Cell, SolverBoard } from "@/shared/types";
+import type { LineConfig, SolvedBoard } from "./types";
 
 // Helper function to substitute for slice+indexOf
 const checkForMark = (
@@ -23,6 +24,16 @@ const checkForMark = (
   return foundMark;
 };
 
+// Helper function to compare two lines
+export function arraysEqual(a: Cell[], b: Cell[]): boolean {
+  if (a.length !== b.length) return false;
+
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) return false;
+  }
+  return true;
+}
+
 // Check possible spaces for current line configuration. We can also mark edges with X this way.
 export function getOverlaps(currentCell: Cell[], hint: number[]): LineConfig {
   const length = currentCell.length;
@@ -33,6 +44,12 @@ export function getOverlaps(currentCell: Cell[], hint: number[]): LineConfig {
 
   if (!hint.length) return result;
   const n = hint.length;
+
+  // If the hint is [0], just mark everything with X
+  if (hint[0] === 0) {
+    result.cells = Array(length).fill("X");
+    return result;
+  }
 
   // Fine the earliest and latest start indexes
   const earliestIdx: number[] = new Array(n).fill(0);
@@ -166,10 +183,10 @@ export function getOverlaps(currentCell: Cell[], hint: number[]): LineConfig {
   for (let i = 0; i < earliestIdx.length; i++) {
     const left = earliestIdx[i];
     const right = latestIdx[i];
-    const overlapEnd = left + hint[i];
+    const overlapEnd = left + hint[i] - 1;
 
     if (overlapEnd >= right) {
-      for (let j = right; j < overlapEnd; j++) {
+      for (let j = right; j <= overlapEnd; j++) {
         result.cells[j] = "O";
       }
     }
@@ -207,4 +224,73 @@ export function getOverlaps(currentCell: Cell[], hint: number[]): LineConfig {
   }
 
   return result;
+}
+
+export function solveBoard(config: SolverBoard, maxLoops: number = 0): SolvedBoard {
+  const { grid, rowHints, colHints } = config;
+
+  let solvingGrid: Cell[][] = structuredClone(grid);
+
+  let invalid = false;
+  let changed: boolean;
+  let count = 1;
+
+  do {
+    changed = false;
+
+    // Each row
+    for (let i = 0; i < solvingGrid.length; i++) {
+      const currentLine: LineConfig = getOverlaps(solvingGrid[i], rowHints[i]);
+      if (currentLine.status === "invalid") {
+        console.error(
+          "Returned invalid: ",
+          currentLine.cells,
+          "Row",
+          i,
+          rowHints[i],
+          "Iteration",
+          count,
+        );
+        invalid = true;
+        break;
+      }
+
+      if (!arraysEqual(solvingGrid[i], currentLine.cells)) {
+        changed = true;
+        solvingGrid[i] = [...currentLine.cells];
+      }
+    }
+
+    // Construct lines for each column and test
+    const colLength = solvingGrid[0].length;
+    const tempGrid: Cell[][] = Array.from({ length: colLength }, (_, i) =>
+      solvingGrid.map((row) => row[i]),
+    );
+
+    for (let i = 0; i < tempGrid.length; i++) {
+      const currentLine: LineConfig = getOverlaps(tempGrid[i], colHints[i]);
+      if (currentLine.status === "invalid") {
+        console.error("Returned invalid: ", currentLine.cells, colHints[i]);
+        invalid = true;
+        break;
+      }
+
+      if (!arraysEqual(tempGrid[i], currentLine.cells)) {
+        changed = true;
+        tempGrid[i] = [...currentLine.cells];
+      }
+    }
+
+    solvingGrid = tempGrid[0].map((_, rowIndex) => tempGrid.map((col) => col[rowIndex]));
+    count++;
+
+    if (maxLoops > 0 && count >= maxLoops) {
+      break;
+    }
+  } while (changed && !invalid);
+
+  return {
+    status: invalid ? "invalid" : "valid",
+    grid: solvingGrid,
+  };
 }
