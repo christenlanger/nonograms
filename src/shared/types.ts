@@ -22,5 +22,5 @@ export type Hints = {
 export type SolverBoard = {
   rows: number;
   cols: number;
-  grid: Cell[][];
+  grid?: Cell[][];
 } & Hints;

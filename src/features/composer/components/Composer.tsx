@@ -31,7 +31,6 @@ export default function Composer({ onSave }: Props) {
   const solverBoard = useRef<SolverBoard>({
     rows: dummyBoard.dimensions.rows,
     cols: dummyBoard.dimensions.cols,
-    grid: Array(dummyBoard.dimensions.rows).fill(Array(dummyBoard.dimensions.cols).fill("?")),
     rowHints: initialHints.rowHints,
     colHints: initialHints.colHints,
   });

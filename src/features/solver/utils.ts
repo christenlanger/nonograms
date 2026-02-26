@@ -226,10 +226,14 @@ export function getOverlaps(currentCell: Cell[], hint: number[]): LineConfig {
   return result;
 }
 
-export function solveBoard(config: SolverBoard, maxLoops: number = 0): SolvedBoard {
-  const { grid, rowHints, colHints } = config;
+// Solve the board.
 
-  let solvingGrid: Cell[][] = structuredClone(grid);
+export function solveBoard(config: SolverBoard, maxLoops: number = 0): SolvedBoard {
+  const { grid, rows, cols, rowHints, colHints } = config;
+
+  let solvingGrid: Cell[][] = grid
+    ? structuredClone(grid)
+    : new Array(rows).fill(new Array(cols).fill("?"));
 
   let invalid = false;
   let changed: boolean;
