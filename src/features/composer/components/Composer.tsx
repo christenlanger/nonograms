@@ -1,9 +1,9 @@
-import { useEffect, useState, useRef } from "react";
+import { useState, useRef } from "react";
 
-import type { BoardLayout, Hints, DragMode, SolverBoard } from "@/shared/types";
-
-import BoardComposer from "./BoardComposer";
+import type { BoardLayout, Hints, SolverBoard } from "@/shared/types";
 import { calculateHints } from "../utils";
+
+import InteractiveBoard from "@/features/core/components/InteractiveBoard";
 
 type Props = {
   onSave?: (solverBoard: SolverBoard) => void;
@@ -27,8 +27,6 @@ const initialHints: Hints = {
 };
 
 export default function Composer({ onSave }: Props) {
-  const handlePointerUpRef = useRef<(() => void) | null>(null);
-  const lastDragModeRef = useRef<DragMode>("unset");
   const solverBoard = useRef<SolverBoard>({
     rows: dummyBoard.dimensions.rows,
     cols: dummyBoard.dimensions.cols,
@@ -36,7 +34,6 @@ export default function Composer({ onSave }: Props) {
     colHints: initialHints.colHints,
   });
   const [boardLayout, setBoardLayout] = useState<BoardLayout>(dummyBoard);
-  const boardLayoutRef = useRef<BoardLayout>(dummyBoard);
   const [hints, setHints] = useState<Hints>(() => {
     const { tiles, dimensions } = dummyBoard;
     const { rows, cols } = dimensions;
@@ -46,53 +43,11 @@ export default function Composer({ onSave }: Props) {
     };
   });
 
-  const setLastDragMode = (mode: DragMode) => {
-    lastDragModeRef.current = mode;
-
-    const handlePointerUp = () => {
-      lastDragModeRef.current = "unset";
-      window.removeEventListener("pointerup", handlePointerUp);
-    };
-    handlePointerUpRef.current = handlePointerUp;
-
-    window.addEventListener("pointerup", handlePointerUp);
-  };
-
-  const handleOnClick = (index: number) => {
-    if (!boardLayout) return;
-
-    if (lastDragModeRef.current === "unset") {
-      if (boardLayout.tiles.has(index)) {
-        setLastDragMode("unmark");
-      } else {
-        setLastDragMode("mark");
-      }
-    }
-
-    setBoardLayout((prev) => {
-      const newTiles = new Map(prev.tiles);
-      if (lastDragModeRef.current === "mark") {
-        newTiles.set(index, "O");
-      } else if (lastDragModeRef.current === "unmark") {
-        newTiles.delete(index);
-      }
-
-      boardLayoutRef.current = {
-        ...prev,
-        tiles: newTiles,
-      };
-      return boardLayoutRef.current;
-    });
-  };
-
   const handleClear = () => {
-    setBoardLayout((prev) => {
-      boardLayoutRef.current = {
-        ...prev,
-        tiles: new Map(),
-      };
-      return boardLayoutRef.current;
-    });
+    setBoardLayout((prev) => ({
+      ...prev,
+      tiles: new Map(),
+    }));
 
     solverBoard.current = {
       ...solverBoard.current,
@@ -107,8 +62,8 @@ export default function Composer({ onSave }: Props) {
     onSave?.({ ...solverBoard.current });
   };
 
-  const handleUpdateHints = () => {
-    const { tiles, dimensions } = boardLayoutRef.current;
+  const handleUpdateBoard = (board: BoardLayout) => {
+    const { tiles, dimensions } = board;
     const { rows, cols } = dimensions;
     const hints: Hints = {
       rowHints: calculateHints(tiles, rows, cols, "rows"),
@@ -121,26 +76,18 @@ export default function Composer({ onSave }: Props) {
       colHints: hints.colHints,
     };
 
+    setBoardLayout(board);
     setHints(hints);
   };
-
-  useEffect(() => {
-    return () => {
-      if (handlePointerUpRef.current) {
-        window.removeEventListener("pointerup", handlePointerUpRef.current);
-        handlePointerUpRef.current = null;
-      }
-    };
-  }, []);
 
   return (
     <div className="nonogram">
       {boardLayout && (
-        <BoardComposer
+        <InteractiveBoard
           boardLayout={boardLayout}
           hints={hints}
-          onMark={handleOnClick}
-          onUpdateHints={handleUpdateHints}
+          disableX={true}
+          onBoardUpdate={handleUpdateBoard}
         />
       )}
       <div className="composer-controls">
