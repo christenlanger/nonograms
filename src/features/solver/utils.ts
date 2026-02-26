@@ -233,7 +233,7 @@ export function solveBoard(config: SolverBoard, maxLoops: number = 0): SolvedBoa
 
   let solvingGrid: Cell[][] = grid
     ? structuredClone(grid)
-    : new Array(rows).fill(new Array(cols).fill("?"));
+    : Array.from({ length: rows }, () => Array.from({ length: cols }, () => "?"));
 
   let invalid = false;
   let changed: boolean;

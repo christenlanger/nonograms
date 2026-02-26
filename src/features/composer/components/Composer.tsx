@@ -11,8 +11,8 @@ type Props = {
 
 const dummyBoard: BoardLayout = {
   dimensions: {
-    rows: 15,
-    cols: 15,
+    rows: 10,
+    cols: 10,
   },
   separators: {
     rows: 5,
@@ -22,12 +22,13 @@ const dummyBoard: BoardLayout = {
 };
 
 const initialHints: Hints = {
-  rowHints: Array(dummyBoard.dimensions.rows).fill([0]),
-  colHints: Array(dummyBoard.dimensions.cols).fill([0]),
+  rowHints: Array.from({ length: dummyBoard.dimensions.rows }, () => [0]),
+  colHints: Array.from({ length: dummyBoard.dimensions.cols }, () => [0]),
 };
 
 export default function Composer({ onSave }: Props) {
-  const [lastDragMode, setLastDragMode] = useState<DragMode>("unset");
+  const handlePointerUpRef = useRef<(() => void) | null>(null);
+  const lastDragModeRef = useRef<DragMode>("unset");
   const solverBoard = useRef<SolverBoard>({
     rows: dummyBoard.dimensions.rows,
     cols: dummyBoard.dimensions.cols,
@@ -45,34 +46,43 @@ export default function Composer({ onSave }: Props) {
     };
   });
 
+  const setLastDragMode = (mode: DragMode) => {
+    lastDragModeRef.current = mode;
+
+    const handlePointerUp = () => {
+      lastDragModeRef.current = "unset";
+      window.removeEventListener("pointerup", handlePointerUp);
+    };
+    handlePointerUpRef.current = handlePointerUp;
+
+    window.addEventListener("pointerup", handlePointerUp);
+  };
+
   const handleOnClick = (index: number) => {
     if (!boardLayout) return;
 
-    if (boardLayout.tiles.has(index)) {
-      if (lastDragMode === "unset" || lastDragMode === "unmark") {
-        if (lastDragMode === "unset") setLastDragMode("unmark");
-        setBoardLayout((prev) => {
-          const newTiles = new Map(prev.tiles);
-          newTiles.delete(index);
-          boardLayoutRef.current = {
-            ...prev,
-            tiles: newTiles,
-          };
-          return boardLayoutRef.current;
-        });
+    if (lastDragModeRef.current === "unset") {
+      if (boardLayout.tiles.has(index)) {
+        setLastDragMode("unmark");
+      } else {
+        setLastDragMode("mark");
       }
-    } else if (lastDragMode === "unset" || lastDragMode === "mark") {
-      if (lastDragMode === "unset") setLastDragMode("mark");
-      setBoardLayout((prev) => {
-        const newTiles = new Map(prev.tiles);
-        newTiles.set(index, "O");
-        boardLayoutRef.current = {
-          ...prev,
-          tiles: newTiles,
-        };
-        return boardLayoutRef.current;
-      });
     }
+
+    setBoardLayout((prev) => {
+      const newTiles = new Map(prev.tiles);
+      if (lastDragModeRef.current === "mark") {
+        newTiles.set(index, "O");
+      } else if (lastDragModeRef.current === "unmark") {
+        newTiles.delete(index);
+      }
+
+      boardLayoutRef.current = {
+        ...prev,
+        tiles: newTiles,
+      };
+      return boardLayoutRef.current;
+    });
   };
 
   const handleClear = () => {
@@ -115,16 +125,13 @@ export default function Composer({ onSave }: Props) {
   };
 
   useEffect(() => {
-    if (lastDragMode === "unset") return;
-
-    const handlePointerUp = () => setLastDragMode("unset");
-
-    window.addEventListener("pointerup", handlePointerUp);
-
     return () => {
-      window.removeEventListener("pointerup", handlePointerUp);
+      if (handlePointerUpRef.current) {
+        window.removeEventListener("pointerup", handlePointerUpRef.current);
+        handlePointerUpRef.current = null;
+      }
     };
-  }, [lastDragMode]);
+  }, []);
 
   return (
     <div className="nonogram">

@@ -3,7 +3,6 @@ import { useRef } from "react";
 import type { BoardLayout, Hints } from "@/shared/types";
 
 import Board from "@/features/core/components/Board";
-import HintsList from "@/features/core/components/Hints";
 
 type Props = {
   boardLayout: BoardLayout;
@@ -15,7 +14,7 @@ type Props = {
 export default function BoardComposer({ boardLayout, hints, onMark, onUpdateHints }: Props) {
   const pointerDown = useRef(false);
 
-  const handlePointerDown = (index: number) => {
+  const handlePointerDown = (event: React.PointerEvent<HTMLButtonElement>, index: number) => {
     pointerDown.current = true;
     onMark(index);
 
@@ -34,18 +33,12 @@ export default function BoardComposer({ boardLayout, hints, onMark, onUpdateHint
     if (pointerDown.current) onMark(index);
   };
 
-  const { colHints, rowHints } = hints;
-
   return (
-    <div className="board-container">
-      <div className="placeholder"></div>
-      <HintsList hints={colHints} mode="cols" />
-      <HintsList hints={rowHints} mode="rows" />
-      <Board
-        boardLayout={boardLayout}
-        onPointerDown={handlePointerDown}
-        onPointerEnter={handlePointerEnter}
-      />
-    </div>
+    <Board
+      boardLayout={boardLayout}
+      hints={hints}
+      onPointerDown={handlePointerDown}
+      onPointerEnter={handlePointerEnter}
+    />
   );
 }

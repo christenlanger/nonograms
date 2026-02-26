@@ -24,11 +24,12 @@ body {
 
 #root {
   display: flex;
-  align-items: flex-start;
 }
 
 .nonogram {
-  background-color: var(--color-background);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 .composer-controls {
@@ -36,7 +37,9 @@ body {
   padding: 0.5rem 1rem;
   display: flex;
   justify-content: flex-end;
+  align-items: center;
   gap: 1rem;
+  flex-grow: 1;
 }
 
 .board-container {
@@ -130,8 +133,42 @@ body {
     }
 
     &.crossed::after {
-      content: "X";
+      content: "x";
       color: rgb(155, 57, 57);
     }
+  }
+}
+
+.board-solver .tile button {
+  background: none;
+
+  &.marked {
+    background-color: #5f5f5f;
+  }
+
+  &.crossed {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  &.crossed::after {
+    content: "x";
+    color: rgb(155, 57, 57);
+  }
+}
+
+.board-solver-status {
+  background-color: #5f5f5f;
+  color: rgb(0, 255, 60);
+  display: flex;
+  justify-content: center;
+
+  &.invalid {
+    color: rgb(209, 77, 77);
+  }
+
+  &.not-unique {
+    color: rgb(255, 141, 96);
   }
 }

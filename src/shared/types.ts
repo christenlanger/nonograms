@@ -14,6 +14,8 @@ export type BoardLayout = {
 
 export type DragMode = "mark" | "unmark" | "unset";
 
+export type ClickMode = "left" | "right";
+
 export type Hints = {
   rowHints: number[][];
   colHints: number[][];
