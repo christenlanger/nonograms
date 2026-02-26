@@ -1,6 +1,8 @@
 import type { Cell, SolverBoard } from "@/shared/types";
 import type { LineConfig, SolvedBoard } from "./types";
 
+import { arraysEqual } from "@/shared/utils";
+
 // Helper function to substitute for slice+indexOf
 const checkForMark = (
   cells: Cell[],
@@ -23,16 +25,6 @@ const checkForMark = (
 
   return foundMark;
 };
-
-// Helper function to compare two lines
-export function arraysEqual(a: Cell[], b: Cell[]): boolean {
-  if (a.length !== b.length) return false;
-
-  for (let i = 0; i < a.length; i++) {
-    if (a[i] !== b[i]) return false;
-  }
-  return true;
-}
 
 // Check possible spaces for current line configuration. We can also mark edges with X this way.
 export function getOverlaps(currentCell: Cell[], hint: number[]): LineConfig {
@@ -153,7 +145,8 @@ export function getOverlaps(currentCell: Cell[], hint: number[]): LineConfig {
   // Iterate for each existing O in the block and check applicable hints
   for (let i = 0; !invalid && i < currentCell.length; i++) {
     if (currentCell[i] === "O") {
-      const possibleBlocks = [];
+      const possibleBlocks: number[] = [];
+
       for (let j = 0; j < n; j++) {
         const start = earliestIdx[j];
         const end = latestIdx[j] + hint[j] - 1;
@@ -170,6 +163,44 @@ export function getOverlaps(currentCell: Cell[], hint: number[]): LineConfig {
         earliestIdx[j] = Math.max(earliestIdx[j], i - hint[j] + 1);
         latestIdx[j] = Math.min(latestIdx[j], i);
       }
+    }
+  }
+
+  // Create O groups for existing line
+  const markGroups: { start: number; end: number; possibleHints: number[] }[] = [];
+  for (let i = 0; i < length; i++) {
+    if (currentCell[i] === "O") {
+      if (i === 0 || currentCell[i - 1] !== "O")
+        markGroups.push({ start: i, end: i, possibleHints: [] });
+      else {
+        markGroups[markGroups.length - 1].end = i;
+      }
+    }
+  }
+
+  // Loop through each O group and check if there are wrappable O's for owned hints
+  for (let i = 0; i < markGroups.length; i++) {
+    const { start, end } = markGroups[i];
+
+    const groupLength = end - start + 1;
+    for (let j = 0; j < n; j++) {
+      if (groupLength > hint[j]) continue;
+
+      if (start >= earliestIdx[j] && end <= latestIdx[j] + hint[j] - 1) {
+        markGroups[i].possibleHints.push(j);
+      }
+    }
+
+    if (markGroups[i].possibleHints.length === 0) {
+      invalid = true;
+      break;
+    }
+
+    // If the O group have the same hint number for all possible hints, and is equal to it, mark X's around it.
+    const allExact = markGroups[i].possibleHints.every((j) => hint[j] === groupLength);
+    if (allExact) {
+      if (start > 0) result.cells[start - 1] = "X";
+      if (end < length - 1) result.cells[end + 1] = "X";
     }
   }
 
@@ -193,8 +224,8 @@ export function getOverlaps(currentCell: Cell[], hint: number[]): LineConfig {
 
     // Mark edges of this hint as X if earliest and latest are equal.
     if (left === right) {
-      if (left - 1 >= 0) result.cells[left - 1] = "X";
-      if (overlapEnd + 1 < length) result.cells[overlapEnd + 1] = "X";
+      if (left > 0) result.cells[left - 1] = "X";
+      if (overlapEnd < length - 1) result.cells[overlapEnd + 1] = "X";
     }
   }
 

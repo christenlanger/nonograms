@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 
 import type { BoardLayout, Hints, SolverBoard } from "@/shared/types";
+import { dummyBoard, initialHints } from "@/shared/utils";
 import { calculateHints } from "../utils";
 
 import InteractiveBoard from "@/features/core/components/InteractiveBoard";
@@ -9,30 +10,8 @@ type Props = {
   onSave?: (solverBoard: SolverBoard) => void;
 };
 
-const dummyBoard: BoardLayout = {
-  dimensions: {
-    rows: 10,
-    cols: 10,
-  },
-  separators: {
-    rows: 5,
-    cols: 5,
-  },
-  tiles: new Map(),
-};
-
-const initialHints: Hints = {
-  rowHints: Array.from({ length: dummyBoard.dimensions.rows }, () => [0]),
-  colHints: Array.from({ length: dummyBoard.dimensions.cols }, () => [0]),
-};
-
-export default function Composer({ onSave }: Props) {
-  const solverBoard = useRef<SolverBoard>({
-    rows: dummyBoard.dimensions.rows,
-    cols: dummyBoard.dimensions.cols,
-    rowHints: initialHints.rowHints,
-    colHints: initialHints.colHints,
-  });
+export default function NonogramComposer({ onSave }: Props) {
+  // States for rendering. TODO: Convert to reducer to handle both states
   const [boardLayout, setBoardLayout] = useState<BoardLayout>(dummyBoard);
   const [hints, setHints] = useState<Hints>(() => {
     const { tiles, dimensions } = dummyBoard;
@@ -43,6 +22,15 @@ export default function Composer({ onSave }: Props) {
     };
   });
 
+  // solverBoard ref for callbacks
+  const solverBoard = useRef<SolverBoard>({
+    rows: dummyBoard.dimensions.rows,
+    cols: dummyBoard.dimensions.cols,
+    rowHints: initialHints.rowHints,
+    colHints: initialHints.colHints,
+  });
+
+  // Clear the board
   const handleClear = () => {
     setBoardLayout((prev) => ({
       ...prev,
@@ -58,10 +46,12 @@ export default function Composer({ onSave }: Props) {
     setHints(initialHints);
   };
 
+  // Callback for saving board.
   const handleOnSave = () => {
     onSave?.({ ...solverBoard.current });
   };
 
+  // Update the board. TODO: Convert to reducer
   const handleUpdateBoard = (board: BoardLayout) => {
     const { tiles, dimensions } = board;
     const { rows, cols } = dimensions;
@@ -80,6 +70,16 @@ export default function Composer({ onSave }: Props) {
     setHints(hints);
   };
 
+  const handleResizeBoard = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setBoardLayout((prev) => ({
+      ...prev,
+      dimensions: {
+        rows: event.target.name === "rows" ? Number(event.target.value) : prev.dimensions.rows,
+        cols: event.target.name === "cols" ? Number(event.target.value) : prev.dimensions.cols,
+      },
+    }));
+  };
+
   return (
     <div className="nonogram">
       {boardLayout && (
@@ -91,6 +91,24 @@ export default function Composer({ onSave }: Props) {
         />
       )}
       <div className="composer-controls">
+        <label>Rows</label>
+        <input
+          name="rows"
+          type="number"
+          min={5}
+          max={20}
+          value={boardLayout.dimensions.rows}
+          onChange={handleResizeBoard}
+        />
+        <label>Columns</label>
+        <input
+          name="cols"
+          type="number"
+          min={5}
+          max={20}
+          value={boardLayout.dimensions.cols}
+          onChange={handleResizeBoard}
+        />
         <button onClick={handleClear}>Clear</button>
         <button onClick={handleOnSave}>Save</button>
       </div>

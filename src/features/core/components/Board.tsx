@@ -36,28 +36,30 @@ export default function Board({
       <div className="placeholder"></div>
       <HintsList hints={colHints} mode="cols" />
       <HintsList hints={rowHints} mode="rows" />
-      <div className="board" style={cssStyle} onContextMenu={(e) => e.preventDefault()}>
-        {Array.from({ length: dimensions.rows }, (_, row) => (
-          <Fragment key={`row-${row}`}>
-            {Array.from({ length: dimensions.cols }, (_, col) => {
-              const index = row * dimensions.cols + col;
-              const value = tiles?.get(index);
-              const cssClass = value === "O" ? "marked" : value === "X" ? "crossed" : "";
+      <div className="grid-container">
+        <div className="board" style={cssStyle} onContextMenu={(e) => e.preventDefault()}>
+          {Array.from({ length: dimensions.rows }, (_, row) => (
+            <Fragment key={`row-${row}`}>
+              {Array.from({ length: dimensions.cols }, (_, col) => {
+                const index = row * dimensions.cols + col;
+                const value = tiles?.get(index);
+                const cssClass = value === "O" ? "marked" : value === "X" ? "crossed" : "";
 
-              return (
-                <Tile
-                  key={`tile-${row}-${col}`}
-                  mark={cssClass}
-                  isColBorder={separators?.cols !== undefined && col % separators.cols === 0}
-                  isRowBorder={separators?.rows !== undefined && row % separators.rows === 0}
-                  onPointerDown={(e) => onPointerDown?.(e, index)}
-                  onPointerEnter={() => onPointerEnter?.(index)}
-                  disabled={disableButtons}
-                />
-              );
-            })}
-          </Fragment>
-        ))}
+                return (
+                  <Tile
+                    key={`tile-${row}-${col}`}
+                    mark={cssClass}
+                    isColBorder={separators?.cols !== undefined && col % separators.cols === 0}
+                    isRowBorder={separators?.rows !== undefined && row % separators.rows === 0}
+                    onPointerDown={(e) => onPointerDown?.(e, index)}
+                    onPointerEnter={() => onPointerEnter?.(index)}
+                    disabled={disableButtons}
+                  />
+                );
+              })}
+            </Fragment>
+          ))}
+        </div>
       </div>
     </div>
   );

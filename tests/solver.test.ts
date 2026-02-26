@@ -141,15 +141,37 @@ describe("getOverlaps", () => {
   });
 
   // ─────────────────────────────
+  // No overlaps
+  // ─────────────────────────────
+
+  it("hints should wrap X's around even if there's no overlap", () => {
+    const result = getOverlaps(["?", "?", "?", "?", "O", "?", "?", "O", "?", "?"], [1, 1, 1]);
+    expect(result.cells.join("")).toBe("???XOXXOX?");
+  });
+
+  it("hints should wrap X's around for specific cells", () => {
+    const result = getOverlaps(["?", "?", "O", "?", "?", "?", "O", "?", "?", "?"], [1, 1, 2, 1]);
+    expect(result.cells.join("")).toBe("?XOX??O???");
+  });
+
+  it("hints should wrap X's around even if there's no overlap for longer hints", () => {
+    const result = getOverlaps(
+      ["?", "O", "O", "?", "?", "?", "?", "O", "O", "?", "?", "?", "?", "?", "?"],
+      [2, 2, 2],
+    );
+    expect(result.cells.join("")).toBe("XOOX??XOOX?????");
+  });
+
+  // ─────────────────────────────
   // Stress tests
   // ─────────────────────────────
 
-  it("case 1", () => {
+  it("stress test case 1", () => {
     const result = getOverlaps(["O", "?", "?", "O", "O", "?", "?", "O", "?", "?"], [1, 3, 1]);
     expect(result.cells.join("")).toBe("OX?OO?XOXX");
   });
 
-  it("case 1 mirror", () => {
+  it("stress test case 1 mirror", () => {
     const result = getOverlaps(["?", "?", "O", "?", "?", "O", "O", "?", "?", "O"], [1, 3, 1]);
     expect(result.cells.join("")).toBe("XXOX?OO?XO");
   });

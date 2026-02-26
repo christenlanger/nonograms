@@ -93,6 +93,12 @@ body {
   }
 }
 
+.grid-container {
+  display: flex;
+  justify-content: flex-start;
+  align-items: flex-start;
+}
+
 .board {
   display: grid;
   border-right: var(--grid-border);
@@ -162,7 +168,8 @@ body {
   background-color: #5f5f5f;
   color: rgb(0, 255, 60);
   display: flex;
-  justify-content: center;
+  justify-content: space-around;
+  align-items: center;
 
   &.invalid {
     color: rgb(209, 77, 77);
@@ -171,4 +178,12 @@ body {
   &.not-unique {
     color: rgb(255, 141, 96);
   }
+}
+
+.game-message {
+  background-color: #5f5f5f;
+  color: rgb(0, 255, 60);
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
