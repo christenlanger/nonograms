@@ -1,4 +1,4 @@
-import type { Cell } from "@/shared/types";
+import type { Cell, Hints } from "@/shared/types";
 
 export function generateCells(rows: number, cols: number, tiles: Set<number>): Cell[][] {
   const output: Cell[][] = [];
@@ -12,4 +12,96 @@ export function generateCells(rows: number, cols: number, tiles: Set<number>): C
   }
 
   return output;
+}
+
+type HintMarks = {
+  rowMarks: number[][];
+  colMarks: number[][];
+};
+
+// Check fulfilled hints per line
+export function getHintFulfilled(line: Cell[], hints: number[]): boolean[] {
+  const n = hints.length;
+  const fulfilled = Array(n).fill(false);
+
+  // Recursive helper
+  function helper(lineIndex: number, hintIndex: number, placementSoFar: number[][]) {
+    if (hintIndex === n) {
+      // All hints placed
+      for (let i = 0; i < n; i++) {
+        if (!placementSoFar[i]) placementSoFar[i] = [];
+        placementsPerHint[i].push([...placementSoFar[i]]);
+      }
+      return;
+    }
+
+    const hintLen = hints[hintIndex];
+
+    // Slide this hint along the remaining line
+    for (let start = lineIndex; start <= line.length - hintLen; start++) {
+      // Check the cells are compatible
+      let fits = true;
+      for (let i = 0; i < hintLen; i++) {
+        if (line[start + i] === "X") fits = false;
+      }
+      // Check boundaries (no adjacent O)
+      if (
+        (start > 0 && line[start - 1] === "O") ||
+        (start + hintLen < line.length && line[start + hintLen] === "O")
+      ) {
+        fits = false;
+      }
+      if (!fits) continue;
+
+      // Record this hint placement and recurse
+      placementSoFar[hintIndex] = Array.from({ length: hintLen }, (_, idx) => start + idx);
+      helper(start + hintLen + 1, hintIndex + 1, placementSoFar);
+    }
+  }
+
+  const placementsPerHint: number[][][] = Array.from({ length: n }, () => []);
+
+  helper(0, 0, Array(n));
+
+  // For each hint, check if all placements agree on the same tiles
+  for (let i = 0; i < n; i++) {
+    if (placementsPerHint[i].length === 0) {
+      // No placement possible, treat as fulfilled
+      fulfilled[i] = true;
+      continue;
+    }
+
+    const firstPlacement = placementsPerHint[i][0].join(",");
+    const allAgree = placementsPerHint[i].every((p) => p.join(",") === firstPlacement);
+    fulfilled[i] = allAgree;
+  }
+
+  return fulfilled;
+}
+
+export function markHints(rows: number, cols: number, hints: Hints, tiles: Set<number>): HintMarks {
+  const result: HintMarks = {
+    rowMarks: [],
+    colMarks: [],
+  };
+
+  const { rowHints, colHints } = hints;
+
+  const grid: Cell[][] = generateCells(rows, cols, tiles);
+  const length = grid.length;
+
+  // Loop per row to check for marked hints
+  for (let i = 0; i < length; i++) {
+    const hintsFulfilled: boolean[] = getHintFulfilled(grid[i], rowHints[i]);
+    const fulfilledIndexes: number[] = hintsFulfilled.reduce((acc: number[], val, idx) => {
+      if (val) acc.push(idx);
+      return acc;
+    }, []);
+
+    result.rowMarks.push(fulfilledIndexes);
+  }
+
+  // Loop per column to check for marked hints
+
+  return result;
 }

@@ -1,4 +1,4 @@
-import type { BoardLayout, Hints } from "./types";
+import type { BoardLayout, Cell, Hints } from "./types";
 
 export const dummyBoard: BoardLayout = {
   dimensions: {
@@ -26,3 +26,26 @@ export function arraysEqual(a: unknown[], b: unknown[]): boolean {
   }
   return true;
 }
+
+// Helper function to substitute for slice+indexOf
+export const checkForMark = (
+  cells: Cell[],
+  mark: Cell,
+  lastMode: boolean = false,
+  ...blocks: number[]
+): number => {
+  const [blockStart = 0, blockEnd = cells.length - 1] = blocks;
+
+  let foundMark = -1;
+
+  for (let i = blockStart; i <= blockEnd; i++) {
+    if (cells[i] === mark) {
+      foundMark = i - blockStart;
+
+      // Return first instance if not on lastMode
+      if (!lastMode) break;
+    }
+  }
+
+  return foundMark;
+};

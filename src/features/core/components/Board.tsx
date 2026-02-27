@@ -8,6 +8,7 @@ import Tile from "./Tile";
 type Props = {
   boardLayout: BoardLayout;
   hints?: Hints;
+  markHints?: boolean;
   disableButtons?: boolean;
   onPointerDown?: (event: React.PointerEvent<HTMLButtonElement>, index: number) => void;
   onPointerEnter?: (index: number) => void;
@@ -16,6 +17,7 @@ type Props = {
 export default function Board({
   boardLayout,
   hints,
+  markHints = false,
   disableButtons,
   onPointerDown,
   onPointerEnter,

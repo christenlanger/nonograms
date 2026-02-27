@@ -54,6 +54,11 @@ export default function Game({ solverBoard, solution }: Props) {
       <div className="game-message">
         <p>{isSolved && "Congratulations!"}</p>
       </div>
+      <ul style={{ display: "flex", flexWrap: "wrap", listStyle: "none", gap: "0.5rem" }}>
+        {solution.map((i) => (
+          <li>{i}</li>
+        ))}
+      </ul>
     </div>
   );
 }

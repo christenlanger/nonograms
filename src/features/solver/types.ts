@@ -9,3 +9,9 @@ export type SolvedBoard = {
   status: "valid" | "invalid";
   grid: Cell[][];
 };
+
+export interface HintInfo {
+  length: number;
+  start: number;
+  end: number;
+}
