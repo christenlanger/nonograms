@@ -1,20 +1,59 @@
-import { useState } from "react";
+import { useReducer, useState } from "react";
 
-import type { BoardLayout, Hints, SolverBoard } from "@/shared/types";
-
-import { arraysEqual } from "@/shared/utils";
+import type { BoardLayout, Hints, HintMarks, SolverBoard } from "@/shared/types";
 
 import InteractiveBoard from "../core/components/InteractiveBoard";
 import Board from "../core/components/Board";
+import { getHighlightedHints } from "../core/utils";
 
 type Props = {
   solverBoard: SolverBoard;
   solution: number[];
 };
 
+type BoardState = {
+  boardLayout: BoardLayout;
+  hints: Hints;
+};
+
+type BoardStateAction = {
+  type: "UPDATE";
+  payload: BoardLayout;
+};
+
+function isUserSolved(answer: Set<number>, solution: number[]): boolean {
+  if (answer.size !== solution.length) return false;
+
+  for (const index of solution) {
+    if (!answer.has(index)) return false;
+  }
+
+  return true;
+}
+
+function reducer(state: BoardState, action: BoardStateAction): BoardState {
+  if (action.type === "UPDATE") {
+    const boardLayout = action.payload;
+    const { dimensions, tiles } = boardLayout;
+    const { rows, cols } = dimensions;
+
+    const markedHints: HintMarks = getHighlightedHints(rows, cols, state.hints, tiles);
+
+    return {
+      boardLayout: structuredClone(boardLayout),
+      hints: {
+        ...state.hints,
+        rowMarks: markedHints.rowMarks,
+        colMarks: markedHints.colMarks,
+      },
+    };
+  }
+
+  return state;
+}
+
 export default function Game({ solverBoard, solution }: Props) {
-  const [isSolved, setIsSolved] = useState(false);
-  const [boardLayout, setBoardLayout] = useState<BoardLayout>(() => ({
+  const initialBoard = {
     dimensions: {
       rows: solverBoard.rows,
       cols: solverBoard.cols,
@@ -24,30 +63,42 @@ export default function Game({ solverBoard, solution }: Props) {
       cols: 5,
     },
     tiles: new Map(),
-  }));
+  };
 
-  const boardHints: Hints = {
+  const initialHints: Hints = {
     rowHints: solverBoard.rowHints,
     colHints: solverBoard.colHints,
   };
 
+  const [isSolved, setIsSolved] = useState(false);
+  const [boardState, dispatch] = useReducer(reducer, {
+    boardLayout: initialBoard,
+    hints: initialHints,
+  });
+
   const handleBoardUpdate = (board: BoardLayout) => {
-    const userSolution = Array.from(board.tiles.keys()).sort((a, b) => a - b);
+    const userSolution = new Set<number>();
+    board.tiles.forEach((val, key) => {
+      if (val === "O") userSolution.add(key);
+    });
 
-    if (!arraysEqual(userSolution, solution)) return;
+    dispatch({ type: "UPDATE", payload: board });
 
-    setBoardLayout(board);
-    setIsSolved(true);
+    if (isUserSolved(userSolution, solution)) setIsSolved(true);
   };
 
   return (
     <div className="nonogram">
       {isSolved ? (
-        <Board boardLayout={boardLayout} hints={boardHints} disableButtons={true} />
+        <Board
+          boardLayout={boardState.boardLayout}
+          hints={boardState.hints}
+          disableButtons={true}
+        />
       ) : (
         <InteractiveBoard
-          boardLayout={boardLayout}
-          hints={boardHints}
+          boardLayout={boardState.boardLayout}
+          hints={boardState.hints}
           onBoardUpdate={handleBoardUpdate}
         />
       )}
@@ -56,7 +107,7 @@ export default function Game({ solverBoard, solution }: Props) {
       </div>
       <ul style={{ display: "flex", flexWrap: "wrap", listStyle: "none", gap: "0.5rem" }}>
         {solution.map((i) => (
-          <li>{i}</li>
+          <li key={i}>{i}</li>
         ))}
       </ul>
     </div>

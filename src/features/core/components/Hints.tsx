@@ -12,7 +12,7 @@ export default function Hints({ hints, marked, mode }: Props) {
           {hint.map((val, numIdx) => (
             <li
               key={`${mode}-hint-${hintIdx}-${numIdx}`}
-              className={marked && marked[hintIdx].includes(numIdx) ? "marked" : undefined}
+              className={marked && marked[hintIdx]?.includes(numIdx) ? "marked" : undefined}
             >
               {val}
             </li>

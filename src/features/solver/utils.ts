@@ -3,8 +3,8 @@ import type { HintInfo, LineConfig, SolvedBoard } from "./types";
 
 import { arraysEqual, checkForMark } from "@/shared/utils";
 
-// Check possible spaces for current line configuration. We can also mark edges with X this way.
-export function getOverlaps(currentCell: Cell[], hints: number[]): LineConfig {
+// Solve current line configuration
+export function solveLine(currentCell: Cell[], hints: number[]): LineConfig {
   const length = currentCell.length;
   const result: LineConfig = {
     status: "valid",
@@ -12,6 +12,7 @@ export function getOverlaps(currentCell: Cell[], hints: number[]): LineConfig {
   };
 
   if (!hints.length) return result;
+
   const n = hints.length;
 
   // If the hint is [0], just mark everything with X
@@ -21,34 +22,31 @@ export function getOverlaps(currentCell: Cell[], hints: number[]): LineConfig {
   }
 
   // Build HintInfo array
-  const hintInfos: HintInfo[] = hints.map((len, i) => ({
+  const hintInfos: HintInfo[] = hints.map((len) => ({
     length: len,
     start: 0,
     end: 0,
   }));
 
   // Fine the earliest and latest start indexes
-  const earliestIdx: number[] = new Array(n).fill(0);
-  earliestIdx[0] = 0;
+  hintInfos[0].start = 0;
   for (let i = 1; i < n; i++) {
-    earliestIdx[i] = earliestIdx[i - 1] + hints[i - 1] + 1;
+    hintInfos[i].start = hintInfos[i - 1].start + hintInfos[i - 1].length + 1;
   }
 
-  const latestIdx: number[] = new Array(n).fill(0);
-  latestIdx[n - 1] = length - hints[n - 1];
+  hintInfos[n - 1].end = length - hintInfos[n - 1].length;
   for (let i = n - 2; i >= 0; i--) {
-    latestIdx[i] = latestIdx[i + 1] - hints[i] - 1;
+    hintInfos[i].end = hintInfos[i + 1].end - hintInfos[i].length - 1;
   }
 
   // Helper function to modify array with sliding indexes.
-  const slideIndexes = (
-    idx: number[],
-    amount: number,
-    startIndex: number = 0,
-    isReverse: boolean = false,
-  ) => {
-    for (let i = startIndex; isReverse ? i >= 0 : i < idx.length; isReverse ? i-- : i++) {
-      idx[i] += amount;
+  const slideIndexes = (amount: number, startIndex: number = 0, isForward = true) => {
+    for (let i = startIndex; isForward ? i < n : i >= 0; isForward ? i++ : i--) {
+      if (isForward) {
+        hintInfos[i].start += amount;
+      } else {
+        hintInfos[i].end -= amount;
+      }
     }
   };
 
@@ -65,9 +63,10 @@ export function getOverlaps(currentCell: Cell[], hints: number[]): LineConfig {
   if (totalHints + n - 1 > length) invalid = true;
 
   // Slide to the right based on constraints
-  for (let i = 0; !invalid && i < earliestIdx.length; i++) {
-    const blockStart = earliestIdx[i];
-    const blockEnd = earliestIdx[i] + hints[i] - 1;
+  for (let i = 0; !invalid && i < n; i++) {
+    const info = hintInfos[i];
+    const blockStart = info.start;
+    const blockEnd = info.start + info.length - 1;
 
     let lastX = checkForMark(currentCell, "X", true, blockStart, blockEnd);
     let slideAmt = 0;
@@ -91,14 +90,15 @@ export function getOverlaps(currentCell: Cell[], hints: number[]): LineConfig {
     }
 
     if (slideAmt > 0) {
-      slideIndexes(earliestIdx, slideAmt, i);
+      slideIndexes(slideAmt, i);
     }
   }
 
   // Slide to the left based on constraints
-  for (let i = latestIdx.length - 1; !invalid && i >= 0; i--) {
-    const blockStart = latestIdx[i];
-    const blockEnd = latestIdx[i] + hints[i] - 1;
+  for (let i = n - 1; !invalid && i >= 0; i--) {
+    const info = hintInfos[i];
+    const blockStart = info.end;
+    const blockEnd = info.end + info.length - 1;
 
     let firstX = checkForMark(currentCell, "X", false, blockStart, blockEnd);
     let slideAmt = 0;
@@ -122,43 +122,43 @@ export function getOverlaps(currentCell: Cell[], hints: number[]): LineConfig {
     }
 
     if (slideAmt > 0) {
-      slideIndexes(latestIdx, -slideAmt, i, true);
+      slideIndexes(slideAmt, i, false);
     }
   }
 
   // Iterate for each existing O in the block and check applicable hints
-  for (let i = 0; !invalid && i < currentCell.length; i++) {
-    if (currentCell[i] === "O") {
-      const possibleBlocks: number[] = [];
+  for (let i = 0; !invalid && i < length; i++) {
+    if (currentCell[i] !== "O") continue;
 
-      for (let j = 0; j < n; j++) {
-        const start = earliestIdx[j];
-        const end = latestIdx[j] + hints[j] - 1;
-        if (start <= i && end >= i) possibleBlocks.push(j);
-      }
+    const possibleBlocks: number[] = [];
 
-      if (possibleBlocks.length === 0) {
-        invalid = true;
-        break;
-      }
+    for (let j = 0; j < n; j++) {
+      const start = hintInfos[j].start;
+      const end = hintInfos[j].end + hintInfos[j].length - 1;
+      if (start <= i && end >= i) possibleBlocks.push(j);
+    }
 
-      if (possibleBlocks.length === 1) {
-        const j = possibleBlocks[0];
-        earliestIdx[j] = Math.max(earliestIdx[j], i - hints[j] + 1);
-        latestIdx[j] = Math.min(latestIdx[j], i);
-      }
+    if (possibleBlocks.length === 0) {
+      invalid = true;
+      break;
+    }
+
+    if (possibleBlocks.length === 1) {
+      const j = possibleBlocks[0];
+      hintInfos[j].start = Math.max(hintInfos[j].start, i - hintInfos[j].length + 1);
+      hintInfos[j].end = Math.min(hintInfos[j].end, i);
     }
   }
 
   // Create O groups for existing line
   const markGroups: { start: number; end: number; possibleHints: number[] }[] = [];
   for (let i = 0; i < length; i++) {
-    if (currentCell[i] === "O") {
-      if (i === 0 || currentCell[i - 1] !== "O")
-        markGroups.push({ start: i, end: i, possibleHints: [] });
-      else {
-        markGroups[markGroups.length - 1].end = i;
-      }
+    if (currentCell[i] !== "O") continue;
+
+    if (i === 0 || currentCell[i - 1] !== "O")
+      markGroups.push({ start: i, end: i, possibleHints: [] });
+    else {
+      markGroups[markGroups.length - 1].end = i;
     }
   }
 
@@ -168,9 +168,10 @@ export function getOverlaps(currentCell: Cell[], hints: number[]): LineConfig {
 
     const groupLength = end - start + 1;
     for (let j = 0; j < n; j++) {
-      if (groupLength > hints[j]) continue;
+      const info = hintInfos[j];
+      if (groupLength > info.length) continue;
 
-      if (start >= earliestIdx[j] && end <= latestIdx[j] + hints[j] - 1) {
+      if (start >= info.start && end <= info.end + info.length - 1) {
         markGroups[i].possibleHints.push(j);
       }
     }
@@ -195,10 +196,10 @@ export function getOverlaps(currentCell: Cell[], hints: number[]): LineConfig {
   }
 
   // Calculate overlaps
-  for (let i = 0; i < earliestIdx.length; i++) {
-    const left = earliestIdx[i];
-    const right = latestIdx[i];
-    const overlapEnd = left + hints[i] - 1;
+  for (const info of hintInfos) {
+    const left = info.start;
+    const right = info.end;
+    const overlapEnd = left + info.length - 1;
 
     if (overlapEnd >= right) {
       for (let j = right; j <= overlapEnd; j++) {
@@ -214,13 +215,13 @@ export function getOverlaps(currentCell: Cell[], hints: number[]): LineConfig {
   }
 
   // Mark edges as X
-  if (earliestIdx[0] > 0) {
-    for (let i = 0; i < earliestIdx[0]; i++) {
+  if (hintInfos[0].start > 0) {
+    for (let i = 0; i < hintInfos[0].start; i++) {
       result.cells[i] = "X";
     }
   }
 
-  const endBoundary = latestIdx[n - 1] + hints[n - 1] - 1;
+  const endBoundary = hintInfos[n - 1].end + hintInfos[n - 1].length - 1;
   if (endBoundary < length) {
     for (let i = length - 1; i > endBoundary; i--) {
       result.cells[i] = "X";
@@ -229,8 +230,8 @@ export function getOverlaps(currentCell: Cell[], hints: number[]): LineConfig {
 
   // Mark gaps between hints as X if the ranges do not intersect.
   for (let i = 0; i < n - 1; i++) {
-    const currentEnd = latestIdx[i] + hints[i] - 1;
-    const nextStart = earliestIdx[i + 1];
+    const currentEnd = hintInfos[i].end + hintInfos[i].length - 1;
+    const nextStart = hintInfos[i + 1].start;
     if (currentEnd < nextStart - 1) {
       for (let j = currentEnd + 1; j <= nextStart - 1; j++) {
         result.cells[j] = "X";
@@ -259,7 +260,7 @@ export function solveBoard(config: SolverBoard, maxLoops: number = 0): SolvedBoa
 
     // Each row
     for (let i = 0; i < solvingGrid.length; i++) {
-      const currentLine: LineConfig = getOverlaps(solvingGrid[i], rowHints[i]);
+      const currentLine: LineConfig = solveLine(solvingGrid[i], rowHints[i]);
       if (currentLine.status === "invalid") {
         console.error(
           "Returned invalid: ",
@@ -287,7 +288,7 @@ export function solveBoard(config: SolverBoard, maxLoops: number = 0): SolvedBoa
     );
 
     for (let i = 0; i < tempGrid.length; i++) {
-      const currentLine: LineConfig = getOverlaps(tempGrid[i], colHints[i]);
+      const currentLine: LineConfig = solveLine(tempGrid[i], colHints[i]);
       if (currentLine.status === "invalid") {
         console.error("Returned invalid: ", currentLine.cells, colHints[i]);
         invalid = true;

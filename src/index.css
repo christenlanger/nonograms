@@ -75,6 +75,10 @@ body {
       min-width: var(--grid-size);
       min-height: var(--grid-size);
     }
+
+    li.marked {
+      opacity: 0.3;
+    }
   }
 }
 

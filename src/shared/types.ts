@@ -22,10 +22,15 @@ export type ClickMode = "left" | "right";
 
 // Solver board types
 
+export type HintMarks = {
+  rowMarks?: number[][];
+  colMarks?: number[][];
+};
+
 export type Hints = {
   rowHints: number[][];
   colHints: number[][];
-};
+} & HintMarks;
 
 export type SolverBoard = {
   rows: number;

@@ -8,7 +8,6 @@ import Tile from "./Tile";
 type Props = {
   boardLayout: BoardLayout;
   hints?: Hints;
-  markHints?: boolean;
   disableButtons?: boolean;
   onPointerDown?: (event: React.PointerEvent<HTMLButtonElement>, index: number) => void;
   onPointerEnter?: (index: number) => void;
@@ -17,13 +16,12 @@ type Props = {
 export default function Board({
   boardLayout,
   hints,
-  markHints = false,
   disableButtons,
   onPointerDown,
   onPointerEnter,
 }: Props) {
   const { dimensions, separators, tiles } = boardLayout;
-  const { colHints, rowHints } = hints ?? {
+  const { colHints, rowHints, colMarks, rowMarks } = hints ?? {
     colHints: Array.from({ length: dimensions.cols }, () => [0]),
     rowHints: Array.from({ length: dimensions.rows }, () => [0]),
   };
@@ -36,8 +34,8 @@ export default function Board({
   return (
     <div className="board-container">
       <div className="placeholder"></div>
-      <HintsList hints={colHints} mode="cols" />
-      <HintsList hints={rowHints} mode="rows" />
+      <HintsList hints={colHints} marked={colMarks} mode="cols" />
+      <HintsList hints={rowHints} marked={rowMarks} mode="rows" />
       <div className="grid-container">
         <div className="board" style={cssStyle} onContextMenu={(e) => e.preventDefault()}>
           {Array.from({ length: dimensions.rows }, (_, row) => (

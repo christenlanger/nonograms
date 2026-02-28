@@ -8,7 +8,6 @@ type Props = {
   boardLayout: BoardLayout;
   hints?: Hints;
   disableX?: boolean;
-  markHints?: boolean;
   onBoardUpdate?: (boardLayout: BoardLayout) => void;
 };
 
@@ -16,7 +15,6 @@ export default function InteractiveBoard({
   boardLayout,
   hints,
   disableX = false,
-  markHints = false,
   onBoardUpdate,
 }: Props) {
   // localBoard state for rendering
@@ -134,7 +132,6 @@ export default function InteractiveBoard({
     <Board
       boardLayout={localBoard}
       hints={hints}
-      markHints={markHints}
       onPointerDown={handlePointerDown}
       onPointerEnter={handlePointerEnter}
     />
