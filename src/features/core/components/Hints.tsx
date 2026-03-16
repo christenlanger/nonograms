@@ -2,9 +2,10 @@ type Props = {
   hints: number[][];
   marked?: number[][];
   mode: "rows" | "cols";
+  isEditable?: boolean;
 };
 
-export default function Hints({ hints, marked, mode }: Props) {
+export default function Hints({ hints, marked, mode, isEditable }: Props) {
   return (
     <div className={`board-${mode}-hints`}>
       {hints.map((hint, hintIdx) => (

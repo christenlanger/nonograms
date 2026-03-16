@@ -175,4 +175,28 @@ describe("solveLine", () => {
     const result = solveLine(["?", "?", "O", "?", "?", "O", "O", "?", "?", "O"], [1, 3, 1]);
     expect(result.cells.join("")).toBe("XXOX?OO?XO");
   });
+
+  it("stress test case 2", () => {
+    const result = solveLine(
+      ["?", "O", "X", "?", "?", "X", "?", "?", "X", "X", "?", "O", "X", "O", "O"],
+      [2, 1, 2, 2],
+    );
+    expect(result.cells.join("")).toBe("OOX??X??XXOOXOO");
+  });
+
+  it("stress test case 2", () => {
+    const result = solveLine(
+      ["O", "O", "X", "O", "?", "X", "X", "?", "?", "X", "?", "?", "X", "O", "?"],
+      [2, 2, 1, 2],
+    );
+    expect(result.cells.join("")).toBe("OOXOOXX??X??XOO");
+  });
+
+  it("stress test case 3", () => {
+    const result = solveLine(
+      ["?", "?", "O", "O", "O", "?", "O", "X", "X", "X", "X", "X", "O", "O", "O"],
+      [5, 3],
+    );
+    expect(result.cells.join("")).toBe("XXOOOOOXXXXXOOO");
+  });
 });

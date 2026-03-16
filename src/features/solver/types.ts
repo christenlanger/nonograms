@@ -8,6 +8,7 @@ export type LineConfig = {
 export type SolvedBoard = {
   status: "valid" | "invalid";
   grid: Cell[][];
+  count: number;
 };
 
 export interface HintInfo {

@@ -1,8 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 
-import type { DragMode, BoardLayout, ClickMode, Hints, Cell } from "@/shared/types";
+import type { DragMode, BoardLayout, ClickMode, Hints, Cell, HintMarks } from "@/shared/types";
 
 import Board from "./Board";
+import { getHighlightedHints } from "../utils";
+
+type LocalBoardState = {
+  board: BoardLayout;
+  hints?: Hints;
+};
 
 type Props = {
   boardLayout: BoardLayout;
@@ -18,7 +24,10 @@ export default function InteractiveBoard({
   onBoardUpdate,
 }: Props) {
   // localBoard state for rendering
-  const [localBoard, setLocalBoard] = useState<BoardLayout>(() => structuredClone(boardLayout));
+  const [localBoardState, setLocalBoardState] = useState<LocalBoardState>(() => ({
+    board: structuredClone(boardLayout),
+    hints,
+  }));
 
   // localBoard ref for callbacks. Should always be synced with board state
   const localBoardRef = useRef<BoardLayout>(structuredClone(boardLayout));
@@ -33,12 +42,12 @@ export default function InteractiveBoard({
   const markTile = (index: number, clickMode: ClickMode) => {
     if (clickMode === "right" && disableX) return;
 
-    setLocalBoard((prev) => {
-      const newTiles = new Map(prev.tiles);
+    setLocalBoardState((prev) => {
+      const newTiles = new Map(prev.board.tiles);
 
       // Set drag mode accordingly
       if (lastDragMode.current === "unset") {
-        lastDragMode.current = prev.tiles.has(index) ? "unmark" : "mark";
+        lastDragMode.current = prev.board.tiles.has(index) ? "unmark" : "mark";
       }
 
       // Add or erase marks depending on drag mode
@@ -50,12 +59,40 @@ export default function InteractiveBoard({
 
       // Update board ref and board state
       const newBoard = {
-        ...prev,
+        ...prev.board,
         tiles: newTiles,
       };
 
       localBoardRef.current = newBoard;
-      return newBoard;
+
+      // Set marked hints if they are defined
+      let newHints = hints ?? undefined;
+      if (hints) {
+        const { dimensions, tiles } = localBoardRef.current;
+        const { rows, cols } = dimensions;
+
+        const looseMarks: HintMarks = getHighlightedHints(rows, cols, hints, tiles);
+        const strictMarks: HintMarks = getHighlightedHints(rows, cols, hints, tiles, true);
+
+        const mergeMarks = (loose?: number[][], strict?: number[][], length = 0) =>
+          Array.from({ length }, (_, i) => {
+            if (loose?.[i]?.length) return [...loose[i]];
+            if (strict?.[i]?.length) return [...strict[i]];
+            return [];
+          });
+
+        const mergedMarks: HintMarks = {
+          rowMarks: mergeMarks(looseMarks.rowMarks, strictMarks.rowMarks, hints.rowHints.length),
+          colMarks: mergeMarks(looseMarks.colMarks, strictMarks.colMarks, hints.colHints.length),
+        };
+
+        newHints = { ...hints, ...mergedMarks };
+      }
+
+      return {
+        board: newBoard,
+        hints: newHints,
+      };
     });
   };
 
@@ -69,7 +106,7 @@ export default function InteractiveBoard({
     pointerDown.current = true;
 
     // Record symbol on first square clicked.
-    firstSymbol.current = localBoard.tiles.get(index);
+    firstSymbol.current = localBoardState.board.tiles.get(index);
 
     // Mark or erase the tile accordingly
     markTile(index, clickMode.current);
@@ -99,7 +136,7 @@ export default function InteractiveBoard({
     if (
       clickMode.current === "right" &&
       lastDragMode.current === "mark" &&
-      localBoard.tiles.has(index)
+      localBoardState.board.tiles.has(index)
     )
       return;
 
@@ -107,7 +144,7 @@ export default function InteractiveBoard({
     if (
       lastDragMode.current === "unmark" &&
       firstSymbol.current === "X" &&
-      localBoard.tiles.get(index) === "O"
+      localBoardState.board.tiles.get(index) === "O"
     )
       return;
 
@@ -125,13 +162,16 @@ export default function InteractiveBoard({
   // Update localBoard ref when prop updates
   useEffect(() => {
     localBoardRef.current = structuredClone(boardLayout);
-    setLocalBoard(localBoardRef.current);
+    setLocalBoardState((prev) => ({
+      ...prev,
+      board: localBoardRef.current,
+    }));
   }, [boardLayout]);
 
   return (
     <Board
-      boardLayout={localBoard}
-      hints={hints}
+      boardLayout={localBoardState.board}
+      hints={localBoardState.hints}
       onPointerDown={handlePointerDown}
       onPointerEnter={handlePointerEnter}
     />

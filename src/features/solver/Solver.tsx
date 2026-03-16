@@ -61,7 +61,7 @@ export default function Solver({ config }: Props) {
     tiles: tiles,
   };
 
-  let status = "Board is solvable.";
+  let status = `Board is solvable. (${solvingGrid.count} loops)`;
   let statusCssClass = "board-solver-status";
 
   if (solvingGrid.status === "invalid") {

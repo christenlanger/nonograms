@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import Composer from "./pages/Composer/Composer";
 import Puzzle from "./pages/Puzzle/Puzzle";
+import SolverPage from "./pages/SolverPage/SolverPage";
 
 export default function App() {
   return (
@@ -10,6 +11,7 @@ export default function App() {
         <Route path="/" element={<p>No routes</p>} />
         <Route path="/puzzle/:id?" element={<Puzzle />} />
         <Route path="/composer" element={<Composer />} />
+        <Route path="/solver" element={<SolverPage />} />
       </Routes>
     </BrowserRouter>
   );

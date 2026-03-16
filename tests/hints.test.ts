@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { getHintFulfilled } from "../src/features/core/utils.ts";
+import { getHintFulfilled, getHintFulfilledSimple } from "../src/features/core/utils.ts";
 
 describe("getHintFulfilled", () => {
   // ─────────────────────────────
@@ -14,6 +14,14 @@ describe("getHintFulfilled", () => {
   it("highlight hint mirrored", () => {
     const result = getHintFulfilled(["?", "?", "?", "X", "O"], [2, 1]);
     expect(result).toEqual([false, true]);
+  });
+
+  it("multiple with one edge", () => {
+    const result = getHintFulfilled(
+      ["?", "?", "?", "?", "?", "?", "?", "X", "O", "O", "O", "O", "O", "O", "O"],
+      [4, 2, 7],
+    );
+    expect(result).toEqual([false, false, true]);
   });
 
   // ─────────────────────────────
@@ -88,5 +96,49 @@ describe("getHintFulfilled", () => {
       optimistic: true,
     });
     expect(result).toEqual([false, false, false]);
+  });
+
+  // ─────────────────────────────
+  // Simple hints mode - hint marking with edge bias
+  // ─────────────────────────────
+
+  it("edge hint detection", () => {
+    const result = getHintFulfilledSimple(
+      ["O", "O", "O", "O", "X", "?", "?", "?", "?", "?", "?", "?", "?", "?", "?"],
+      [4, 2, 7],
+    );
+    expect(result).toEqual([true, false, false]);
+  });
+
+  it("edge hint detection reversed", () => {
+    const result = getHintFulfilledSimple(
+      ["?", "?", "?", "?", "?", "?", "?", "?", "?", "?", "X", "O", "O", "O", "O"],
+      [7, 2, 4],
+    );
+    expect(result).toEqual([false, false, true]);
+  });
+
+  it("multiple repeating values", () => {
+    const result = getHintFulfilledSimple(
+      ["O", "X", "O", "X", "?", "?", "?", "?", "?", "?", "?", "?", "?", "?", "?"],
+      [1, 1, 1, 7],
+    );
+    expect(result).toEqual([true, true, false, false]);
+  });
+
+  it("multiple repeating values reversed", () => {
+    const result = getHintFulfilledSimple(
+      ["?", "?", "?", "?", "?", "?", "?", "?", "?", "?", "?", "X", "O", "X", "O"],
+      [7, 1, 1, 1],
+    );
+    expect(result).toEqual([false, false, true, true]);
+  });
+
+  it("multiple repeating values middle", () => {
+    const result = getHintFulfilledSimple(
+      ["O", "O", "X", "?", "?", "X", "?", "?", "X", "O", "X", "O", "X", "O", "O"],
+      [2, 1, 1, 1, 2],
+    );
+    expect(result).toEqual([true, false, true, true, true]);
   });
 });
